@@ -81,6 +81,10 @@ module Paperclip
         ActiveRecord::Base.logger.info("[paperclip] Database Storage Initalized.")
       end
 
+      def foreign_key_column_name
+        @options[:foreign_key_column_name] || instance.class.table_name.classify.underscore + '_id'
+      end
+
       def setup_paperclip_files_association
         @paperclip_files_association_name = @paperclip_file_model.name.demodulize.tableize
         @database_table = @paperclip_file_model.table_name
@@ -88,7 +92,7 @@ module Paperclip
         #FIXME: This should be fixed in ActiveRecord...
         instance.class.has_many(@paperclip_files_association_name.to_sym,
                                 :class_name => @paperclip_file_model.name,
-                                :foreign_key => instance.class.table_name.classify.underscore + '_id'
+                                :foreign_key => foreign_key_column_name
                                 )
       end
       private :setup_paperclip_files_association
@@ -100,7 +104,7 @@ module Paperclip
         else
           @paperclip_file_model = @attachment_class.const_set(class_name, Class.new(::ActiveRecord::Base))
           @paperclip_file_model.table_name = @options[:database_table] || name.to_s.pluralize
-          @paperclip_file_model.validates_uniqueness_of :style, :scope => instance.class.table_name.classify.underscore + '_id'
+          @paperclip_file_model.validates_uniqueness_of :style, :scope => foreign_key_column_name
           @paperclip_file_model.scope :file_for, lambda {|style| @paperclip_file_model.where('style = ?', style) }
         end
       end
